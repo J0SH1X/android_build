@@ -31,12 +31,8 @@ ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
     UM_FAMILY := msm8937 msm8953
 
     qcom_flags := -DQCOM_HARDWARE
-    qcom_flags += -DQCOM_BSP
-    qcom_flags += -DQTI_BSP
 
     BOARD_USES_ADRENO := true
-
-    TARGET_USES_QCOM_BSP := true
 
     # Tell HALs that we're compiling an AOSP build with an in-line kernel
     TARGET_COMPILE_WITH_MSM_KERNEL := true
@@ -89,8 +85,16 @@ $(call project-set-path,qcom-audio,hardware/qcom/audio-caf/$(QCOM_HARDWARE_VARIA
 $(call project-set-path,qcom-display,hardware/qcom/display-caf/$(QCOM_HARDWARE_VARIANT))
 $(call project-set-path,qcom-media,hardware/qcom/media-caf/$(QCOM_HARDWARE_VARIANT))
 
-$(call set-device-specific-path,CAMERA,camera,hardware/qcom/camera)
-$(call set-device-specific-path,GPS,gps,hardware/qcom/gps)
+$(call project-set-path,qcom-audio,hardware/qcom/$(QCOM_AUDIO_VARIANT))
+$(call project-set-path,qcom-display,hardware/qcom/$(QCOM_DISPLAY_VARIANT))
+$(call project-set-path,qcom-media,hardware/qcom/$(QCOM_MEDIA_VARIANT))
+
+ifeq ($(USE_DEVICE_SPECIFIC_CAMERA),true)
+    $(call project-set-path,qcom-camera,$(TARGET_DEVICE_DIR)/camera)
+else
+    $(call project-set-path,CAMERA,hardware/qcom/camera)
+endif
+$(call project-set-path,GPS,QCOM_GPS_VARIANT)
 $(call set-device-specific-path,SENSORS,sensors,hardware/qcom/sensors)
 $(call set-device-specific-path,LOC_API,loc-api,vendor/qcom/opensource/location)
 $(call set-device-specific-path,DATASERVICES,dataservices,vendor/qcom/opensource/dataservices)
@@ -101,9 +105,21 @@ $(call bt-vendor-set-path-variant,bt-caf)
 
 else
 
-$(call project-set-path,qcom-audio,hardware/qcom/audio/default)
-$(call project-set-path,qcom-display,hardware/qcom/display/$(TARGET_BOARD_PLATFORM))
-$(call project-set-path,qcom-media,hardware/qcom/media/default)
+# QSD8K doesn't use QCOM_HARDWARE flag
+ifneq ($(filter qsd8k,$(TARGET_BOARD_PLATFORM)),)
+    QCOM_AUDIO_VARIANT := audio-legacy
+    QCOM_GPS_VARIANT := gps-legacy
+else
+    QCOM_AUDIO_VARIANT := audio
+    QCOM_GPS_VARIANT := gps
+endif
+ifeq ($(BOARD_USES_LEGACY_QCOM_DISPLAY),true)
+    QCOM_DISPLAY_VARIANT := display-legacy
+    QCOM_MEDIA_VARIANT := media-legacy
+else
+    QCOM_DISPLAY_VARIANT := display
+    QCOM_MEDIA_VARIANT := media
+endif
 
 $(call project-set-path,qcom-camera,hardware/qcom/camera)
 $(call project-set-path,qcom-gps,hardware/qcom/gps)
